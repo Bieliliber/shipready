@@ -2,9 +2,7 @@ import { Worker, Job } from 'bullmq'
 import { Redis } from 'ioredis'
 import { QUEUE_NAMES } from './queues'
 
-if (!process.env.REDIS_URL) {
-  throw new Error('Missing REDIS_URL')
-}
+if (!process.env.REDIS_URL) throw new Error('Missing REDIS_URL')
 
 export const connection = new Redis(process.env.REDIS_URL, {
   maxRetriesPerRequest: null,
@@ -28,27 +26,38 @@ const worker = new Worker(
 
     const { ingestFromGitHub, cleanupScanDir } = await import('./workers/ingest')
     const { runStaticScan } = await import('./workers/static-scan')
+    const { runAiAnalysis } = await import('./workers/ai-analysis')
+    const { saveReport, markFailed } = await import('./workers/report')
 
-    await job.updateProgress(10)
-    console.log('Stage 1: Ingesting code...')
-    const scanDir = await ingestFromGitHub(submissionId, sourceUrl || '')
+    let scanDir: string | null = null
 
-    await job.updateProgress(30)
-    console.log('Stage 2: Running static scan...')
-    const findings = await runStaticScan(scanDir)
+    try {
+      await job.updateProgress(10)
+      console.log('Stage 1: Ingesting code...')
+      scanDir = await ingestFromGitHub(submissionId, sourceUrl || '')
 
-    await job.updateProgress(60)
-    console.log('Stage 3: AI analysis...')
-    // TODO: Step 11 - Claude API
+      await job.updateProgress(30)
+      console.log('Stage 2: Static scan...')
+      const findings = await runStaticScan(scanDir)
 
-    await job.updateProgress(85)
-    console.log('Stage 4: Generating report...')
-    // TODO: Step 12 - report
+      await job.updateProgress(60)
+      console.log('Stage 3: AI analysis...')
+      const analysisResult = await runAiAnalysis(findings)
 
-    await job.updateProgress(100)
-    cleanupScanDir(scanDir)
+      await job.updateProgress(85)
+      console.log('Stage 4: Saving report...')
+      await saveReport(submissionId, analysisResult)
 
-    return { success: true, submissionId, findingsCount: findings.length }
+      await job.updateProgress(100)
+      return { success: true, submissionId, findingsCount: findings.length }
+
+    } catch (err: any) {
+      console.error(`❌ Scan failed: ${err.message}`)
+      await markFailed(submissionId, err.message)
+      throw err
+    } finally {
+      if (scanDir) cleanupScanDir(scanDir)
+    }
   },
   {
     connection: connection as any,
@@ -58,16 +67,8 @@ const worker = new Worker(
   }
 )
 
-worker.on('completed', (job: Job) =>
-  console.log(`✅ Job ${job.id} completed`)
-)
-
-worker.on('failed', (job: Job | undefined, err: Error) =>
-  console.error(`❌ Job ${job?.id} failed:`, err.message)
-)
-
-worker.on('progress', (job: Job, progress) =>
-  console.log(`📊 Job ${job.id}: ${JSON.stringify(progress)}%`)
-)
+worker.on('completed', (job: Job) => console.log(`✅ Job ${job.id} completed`))
+worker.on('failed', (job: Job | undefined, err: Error) => console.error(`❌ Job ${job?.id} failed:`, err.message))
+worker.on('progress', (job: Job, progress) => console.log(`📊 Job ${job.id}: ${JSON.stringify(progress)}%`))
 
 console.log(`✅ Worker listening on queue: ${QUEUE_NAMES.SCAN}`)

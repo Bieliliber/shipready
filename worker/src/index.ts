@@ -27,14 +27,15 @@ const worker = new Worker(
     console.log(`📦 Processing scan: ${submissionId}`)
 
     const { ingestFromGitHub, cleanupScanDir } = await import('./workers/ingest')
+    const { runStaticScan } = await import('./workers/static-scan')
 
     await job.updateProgress(10)
     console.log('Stage 1: Ingesting code...')
     const scanDir = await ingestFromGitHub(submissionId, sourceUrl || '')
 
     await job.updateProgress(30)
-    console.log('Stage 2: Static scan...')
-    // TODO: Step 10 - Semgrep + Gitleaks
+    console.log('Stage 2: Running static scan...')
+    const findings = await runStaticScan(scanDir)
 
     await job.updateProgress(60)
     console.log('Stage 3: AI analysis...')
@@ -46,7 +47,8 @@ const worker = new Worker(
 
     await job.updateProgress(100)
     cleanupScanDir(scanDir)
-    return { success: true, submissionId }
+
+    return { success: true, submissionId, findingsCount: findings.length }
   },
   {
     connection: connection as any,

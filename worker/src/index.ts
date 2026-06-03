@@ -19,26 +19,33 @@ console.log('🚀 ShipReady Worker starting...')
 const worker = new Worker(
   QUEUE_NAMES.SCAN,
   async (job: Job) => {
-    const { submissionId } = job.data as {
+    const { submissionId, sourceType, sourceUrl } = job.data as {
       submissionId: string
       sourceType: string
       sourceUrl?: string
     }
     console.log(`📦 Processing scan: ${submissionId}`)
 
+    const { ingestFromGitHub, cleanupScanDir } = await import('./workers/ingest')
+
     await job.updateProgress(10)
     console.log('Stage 1: Ingesting code...')
+    const scanDir = await ingestFromGitHub(submissionId, sourceUrl || '')
 
     await job.updateProgress(30)
     console.log('Stage 2: Static scan...')
+    // TODO: Step 10 - Semgrep + Gitleaks
 
     await job.updateProgress(60)
     console.log('Stage 3: AI analysis...')
+    // TODO: Step 11 - Claude API
 
     await job.updateProgress(85)
     console.log('Stage 4: Generating report...')
+    // TODO: Step 12 - report
 
     await job.updateProgress(100)
+    cleanupScanDir(scanDir)
     return { success: true, submissionId }
   },
   {

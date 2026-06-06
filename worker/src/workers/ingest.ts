@@ -11,10 +11,17 @@ export async function ingestFromGitHub(
   const scanDir = path.join(WORK_DIR, submissionId)
   fs.mkdirSync(scanDir, { recursive: true })
 
-  const git = simpleGit()
-  await git.clone(repoUrl, scanDir, ['--depth', '1'])
-  console.log(`✅ Cloned ${repoUrl}`)
+  process.env.GIT_TERMINAL_PROMPT = '0'
+  process.env.GIT_ASKPASS = 'echo'
 
+  const git = simpleGit()
+  await git.clone(repoUrl, scanDir, [
+    '--depth', '1',
+    '-c', 'credential.helper=',
+    '-c', 'core.askpass=echo',
+  ])
+
+  console.log(`✅ Cloned ${repoUrl}`)
   return scanDir
 }
 

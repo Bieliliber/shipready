@@ -19,12 +19,12 @@ const worker = new Worker(
   async (job: Job) => {
     const { submissionId, sourceType, sourceUrl } = job.data as {
       submissionId: string
-      sourceType: string
-      sourceUrl?: string
+      sourceType: 'github' | 'zip'
+      sourceUrl: string
     }
-    console.log(`📦 Processing scan: ${submissionId}`)
+    console.log(`📦 Processing scan: ${submissionId} (${sourceType})`)
 
-    const { ingestFromGitHub, cleanupScanDir } = await import('./workers/ingest')
+    const { ingestFromGitHub, ingestFromZip, cleanupScanDir } = await import('./workers/ingest')
     const { runStaticScan } = await import('./workers/static-scan')
     const { runAiAnalysis } = await import('./workers/ai-analysis')
     const { saveReport, markFailed } = await import('./workers/report')
@@ -34,10 +34,15 @@ const worker = new Worker(
     try {
       await job.updateProgress(10)
       console.log('Stage 1: Ingesting code...')
-      scanDir = await ingestFromGitHub(submissionId, sourceUrl || '')
+
+      if (sourceType === 'zip') {
+        scanDir = await ingestFromZip(submissionId, sourceUrl)
+      } else {
+        scanDir = await ingestFromGitHub(submissionId, sourceUrl)
+      }
 
       await job.updateProgress(30)
-      console.log('Stage 2: Static scan...')
+      console.log('Stage 2: Running static scan...')
       const findings = await runStaticScan(scanDir)
 
       await job.updateProgress(60)

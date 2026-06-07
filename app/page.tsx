@@ -11,7 +11,7 @@ export default function HomePage() {
           <div className="flex items-center gap-6">
             <a href="#how-it-works" className="text-sm text-gray-600 hover:text-gray-900">How it works</a>
             <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900">Pricing</a>
-            <Link href="/sign-up" className="bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+            <Link href="/dashboard/new-scan" className="bg-black text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
               Audit my app
             </Link>
           </div>
@@ -31,7 +31,7 @@ export default function HomePage() {
             Paste your GitHub URL. Get a full security audit, performance report, and exact fix prompts in 48 hours. Built for founders who ship fast.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/sign-up" className="bg-black text-white px-8 py-4 rounded-xl text-lg font-medium hover:bg-gray-800 transition-colors">
+            <Link href="/dashboard/new-scan" className="bg-black text-white px-8 py-4 rounded-xl text-lg font-medium hover:bg-gray-800 transition-colors">
               Audit my app — $499
             </Link>
             <a href="#how-it-works" className="border border-gray-200 text-gray-700 px-8 py-4 rounded-xl text-lg font-medium hover:bg-gray-50 transition-colors">
@@ -163,7 +163,7 @@ export default function HomePage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/sign-up" className={`block text-center py-3 rounded-xl text-sm font-medium transition-colors ${plan.featured ? 'bg-white text-black hover:bg-gray-100' : 'bg-black text-white hover:bg-gray-800'}`}>
+                <Link href="/dashboard/new-scan" className={`block text-center py-3 rounded-xl text-sm font-medium transition-colors ${plan.featured ? 'bg-white text-black hover:bg-gray-100' : 'bg-black text-white hover:bg-gray-800'}`}>
                   {plan.cta}
                 </Link>
               </div>
@@ -177,7 +177,7 @@ export default function HomePage() {
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-4">Stop losing customers to downtime and breaches</h2>
           <p className="text-gray-400 mb-8">Every day your app runs unaudited is a day you're one bug away from losing everything you've built.</p>
-          <Link href="/sign-up" className="bg-white text-black px-8 py-4 rounded-xl text-lg font-medium hover:bg-gray-100 transition-colors inline-block">
+          <Link href="/dashboard/new-scan" className="bg-white text-black px-8 py-4 rounded-xl text-lg font-medium hover:bg-gray-100 transition-colors inline-block">
             Audit my app now — $499
           </Link>
         </div>

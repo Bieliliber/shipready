@@ -3,14 +3,19 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-export default async function ScanPage({ params }: { params: { id: string } }) {
+export default async function ScanPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
   const { data: submission } = await supabase
     .from('submissions')
     .select('*, scans(*, findings(*))')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', userId)
     .single()
 
@@ -32,8 +37,6 @@ export default async function ScanPage({ params }: { params: { id: string } }) {
       </nav>
 
       <div className="max-w-4xl mx-auto px-6 py-12">
-
-        {/* Status */}
         <div className="mb-8">
           <p className="text-sm text-gray-500 mb-1 truncate">{submission.source_url}</p>
           <div className="flex items-center gap-4">
@@ -46,17 +49,14 @@ export default async function ScanPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        {/* Pending state */}
         {submission.status !== 'completed' && submission.status !== 'failed' && (
           <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center mb-8">
             <div className="text-4xl mb-4 animate-pulse">🔍</div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Scan in progress</h2>
-            <p className="text-gray-500">We're scanning your codebase. This page will update when complete.</p>
-            <p className="text-sm text-gray-400 mt-4">Refresh this page to check progress</p>
+            <p className="text-gray-500">We are scanning your codebase. Refresh this page to check progress.</p>
           </div>
         )}
 
-        {/* Scores */}
         {scan && submission.status === 'completed' && (
           <>
             <div className="grid grid-cols-4 gap-4 mb-8">
@@ -75,7 +75,6 @@ export default async function ScanPage({ params }: { params: { id: string } }) {
               ))}
             </div>
 
-            {/* Summary */}
             <div className="grid grid-cols-3 gap-4 mb-8">
               {[
                 { label: 'Critical', count: critical.length, color: 'text-red-600 bg-red-50' },
@@ -89,7 +88,6 @@ export default async function ScanPage({ params }: { params: { id: string } }) {
               ))}
             </div>
 
-            {/* Findings */}
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4">Findings ({findings.length})</h2>
               <div className="space-y-4">
@@ -126,7 +124,7 @@ export default async function ScanPage({ params }: { params: { id: string } }) {
 
         {submission.status === 'failed' && (
           <div className="bg-red-50 border border-red-100 rounded-xl p-6 text-center">
-            <p className="text-red-700 font-medium">Scan failed. Please try again or contact support.</p>
+            <p className="text-red-700 font-medium">Scan failed. Please try again.</p>
           </div>
         )}
       </div>
